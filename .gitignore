@@ -1,0 +1,17 @@
+# Binaries
+/bin
+/build
+*.exe
+*.out
+
+# Go
+vendor/
+*.test
+
+# IDE
+.idea/
+.vscode/
+
+# Env
+.env
+.env.*
