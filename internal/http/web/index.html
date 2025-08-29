@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Order Lookup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+    h1 { margin-bottom: 12px; }
+    .row { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
+    input { padding: 8px; width: 360px; }
+    button { padding: 8px 12px; cursor: pointer; }
+    pre { background: #f7f7f9; padding: 16px; border-radius: 8px; min-height: 160px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>Order Lookup</h1>
+  <div class="row">
+    <input id="orderId" placeholder="Введите order_uid (например: b563feb7b2b84b6test)" />
+    <button id="btn">Получить</button>
+  </div>
+  <pre id="out">Здесь появится JSON заказа</pre>
+
+  <script>
+    async function loadOrder() {
+      const id = document.getElementById('orderId').value.trim();
+      const out = document.getElementById('out');
+      if (!id) { alert('Введите order_uid'); return; }
+      out.textContent = 'Загрузка...';
+      try {
+        const res = await fetch('/order/' + encodeURIComponent(id));
+        const text = await res.text();
+        out.textContent = text;
+      } catch (e) {
+        out.textContent = 'Ошибка: ' + (e && e.message ? e.message : e);
+      }
+    }
+    document.getElementById('btn').addEventListener('click', loadOrder);
+    document.getElementById('orderId').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') loadOrder();
+    });
+  </script>
+</body>
+</html>

@@ -1,1 +1,19 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Order Lookup</title>
 <h1>Order Lookup</h1>
+<form id="f">
+  <input id="oid" placeholder="order_id" value="b563feb7b2b84b6test" />
+  <button type="submit">Find</button>
+</form>
+<pre id="out" style="padding:12px;border:1px solid #eee;border-radius:8px;"></pre>
+<script>
+document.getElementById('f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('oid').value.trim();
+  const r = await fetch(`/order/${encodeURIComponent(id)}`);
+  const out = document.getElementById('out');
+  out.textContent = r.ok ? JSON.stringify(await r.json(), null, 2)
+                         : `Error ${r.status}`;
+});
+</script>
