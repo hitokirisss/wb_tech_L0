@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	nethttp "net/http" //  чтобы не конфликтовать с именем пакета
+	nethttp "net/http" // чтобы не конфликтовать с именем пакета
 	"path"
 	"strings"
 	"time"
@@ -43,22 +43,37 @@ func New(addr string, st *storage.Store, c *cache.Cache, preload map[string]json
 			return
 		}
 
-		if raw, ok := c.Get(id); ok {
-			writeJSONBytes(w, raw, nethttp.StatusOK)
+		var raw json.RawMessage
+		var ok bool
+		if raw, ok = c.Get(id); !ok {
+			var err error
+			raw, err = st.GetOrderRawJSON(r.Context(), id)
+			if err != nil {
+				if errors.Is(err, storage.ErrNotFound) {
+					nethttp.Error(w, "not found", nethttp.StatusNotFound)
+				} else {
+					nethttp.Error(w, "internal error", nethttp.StatusInternalServerError)
+				}
+				return
+			}
+			c.Set(id, raw)
+		}
+
+		// Красивый вывод через MarshalIndent
+		var v any
+		if err := json.Unmarshal(raw, &v); err != nil {
+			nethttp.Error(w, "json error", nethttp.StatusInternalServerError)
+			return
+		}
+		pretty, err := json.MarshalIndent(v, "", "  ")
+		if err != nil {
+			nethttp.Error(w, "json error", nethttp.StatusInternalServerError)
 			return
 		}
 
-		raw, err := st.GetOrderRawJSON(r.Context(), id)
-		if err != nil {
-			if errors.Is(err, storage.ErrNotFound) {
-				nethttp.Error(w, "not found", nethttp.StatusNotFound)
-			} else {
-				nethttp.Error(w, "internal error", nethttp.StatusInternalServerError)
-			}
-			return
-		}
-		c.Set(id, raw)
-		writeJSONBytes(w, raw, nethttp.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(nethttp.StatusOK)
+		_, _ = w.Write(pretty)
 	})
 
 	mux.HandleFunc("/", func(w nethttp.ResponseWriter, r *nethttp.Request) {
